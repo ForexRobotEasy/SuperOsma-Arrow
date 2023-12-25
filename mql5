@@ -1,0 +1,98 @@
+
+// SuperOsma Arrow - Trading Robot
+// Developer's Site: forexroboteasy.com
+// Development Team: Forex Robot Easy Team
+
+// Indicator Constants
+#property indicator_chart_window
+#property indicator_buffers 2
+#property indicator_color1 Aqua
+#property indicator_color2 Red
+
+// Global Variables
+double BuyBuffer[];
+double SellBuffer[];
+
+// Initialization Function
+int OnInit()
+{
+    // Define indicator buffers
+    SetIndexBuffer(0, BuyBuffer);
+    SetIndexBuffer(1, SellBuffer);
+
+    // Set indicator labels
+    IndicatorShortName('SuperOsma Arrow');
+
+    return(INIT_SUCCEEDED);
+}
+
+// Deinitialization Function
+void OnDeinit(const int reason)
+{
+    // Cleanup indicator buffers
+    ArrayResize(BuyBuffer, 0);
+    ArrayResize(SellBuffer, 0);
+}
+
+// Calculation Function
+int OnCalculate(const int rates_total, const int prev_calculated, const datetime& time[], const double& open[], const double& high[], const double& low[], const double& close[], const long& tick_volume[], const long& volume[], const int& spread[])
+{
+    int limit;
+    if (prev_calculated == 0)
+        limit = rates_total - 2;
+    else
+        limit = rates_total - prev_calculated;
+
+    for (int i = 0; i < limit; i++)
+    {
+        double osma = iOsMA(NULL, 0, 12, 26, 9, PRICE_CLOSE, i);
+        
+        if (osma > 0)
+        {
+            BuyBuffer[i] = high[i];
+            SellBuffer[i] = 0;
+        }
+        else if (osma < 0)
+        {
+            BuyBuffer[i] = 0;
+            SellBuffer[i] = low[i];
+        }
+        else
+        {
+            BuyBuffer[i] = 0;
+            SellBuffer[i] = 0;
+        }
+    }
+
+    return(rates_total);
+}
+
+// Custom Functions
+void DisplayDashboard()
+{
+    int winners = 0;
+    int losers = 0;
+    int totalSignals = ArraySize(BuyBuffer);
+
+    for (int i = 0; i < totalSignals; i++)
+    {
+        if (BuyBuffer[i] > 0)
+            winners++;
+        else if (SellBuffer[i] > 0)
+            losers++;
+    }
+
+    double winRate = (winners / totalSignals) * 100;
+
+    // Display dashboard information
+    Print('Win-Rate Percentage: ', winRate, '%');
+    Print('Number of Winners: ', winners);
+    Print('Number of Losers: ', losers);
+}
+
+// Execution Entry Point
+void OnTick()
+{
+    // Perform necessary actions on each tick
+    DisplayDashboard();
+}
